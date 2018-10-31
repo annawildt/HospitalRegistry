@@ -1,6 +1,7 @@
 package com.company.People;
 
 import com.company.Addresses.Address;
+import com.company.Clinics.Clinic;
 
 import java.util.List;
 
