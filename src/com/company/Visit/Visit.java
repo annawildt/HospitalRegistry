@@ -1,52 +1,41 @@
 package com.company.Visit;
 
-import com.company.Clinics.Clinic;
-import com.company.People.MedicalStaff;
-import com.company.People.Patient;
-
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 public class Visit {
-    private Patient patient;
-    private Date dateAndTimeOfVisit;
-    private MedicalStaff medicalStaff;
-    private Clinic clinic;
+    private Date dateOfVisit;
+    private String medicalStaffName;
+    private String clinicName;
     private List<Issue> reasonsForVisit;
 
-    public Visit(Patient patient, Date dateAndTimeOfVisit, MedicalStaff medicalStaff, Clinic clinic, List<Issue> reasonsForVisit) {
-        this.patient = patient;
-        this.dateAndTimeOfVisit = dateAndTimeOfVisit;
-        this.medicalStaff = medicalStaff;
-        this.clinic = clinic;
+    public Visit(Date dateOfVisit, String medicalStaffName, String clinicName, List<Issue> reasonsForVisit) {
+        this.dateOfVisit = dateOfVisit;
+        this.medicalStaffName = medicalStaffName;
+        this.clinicName = clinicName;
         this.reasonsForVisit = reasonsForVisit;
     }
 
     public void changeDateAndTime(Date date) {
-        this.dateAndTimeOfVisit = date;
+        this.dateOfVisit = date;
     }
 
-    public MedicalStaff getMedicalStaff() {
-        return medicalStaff;
+    public String getmedicalStaffName() {
+        return medicalStaffName;
     }
 
-    public Clinic getClinic() {
-        return clinic;
+    public String getClinicName() {
+        return clinicName;
     }
 
-    public String getDateAndTimeOfVisit() {
+    public String getDateOfVisit() {
         SimpleDateFormat dateFormat = new SimpleDateFormat("hh:mm E dd/MM yyyy");
-        return dateFormat.format(dateAndTimeOfVisit);
+        return dateFormat.format(dateOfVisit);
     }
 
     public List<Issue> getReasonsForVisit() {
         return reasonsForVisit;
-    }
-
-    public Patient getPatient() {
-        return patient;
     }
 
     public int getCostOfVisit() {

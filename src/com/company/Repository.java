@@ -6,6 +6,10 @@ import com.company.Clinics.Clinic;
 import com.company.Clinics.Clinics;
 import com.company.People.MedicalStaff;
 import com.company.People.MedicalStaffEnum;
+import com.company.People.Patient;
+import com.company.Visit.Issue;
+import com.company.Visit.IssueEnum;
+import com.company.Visit.Visit;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -34,7 +38,7 @@ public class Repository {
             ResultSet res = preparedStatement.executeQuery();
 
             while(res.next()) {
-                clinics.add(createNewClinicFromDB(res));
+                clinics.add(getClinicFromDB(res));
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -46,7 +50,6 @@ public class Repository {
 
     private List<Clinic> getConnectedClinics(String clinicID) {
         String statement = "SELECT * FROM dbo.Clinics WHERE ConnectedClinicID = ?";
-
         List<Clinic> connectedClinics = new ArrayList<>();
 
         try (PreparedStatement preparedStatement = dbconn.prepareStatement(statement)) {
@@ -54,7 +57,7 @@ public class Repository {
             ResultSet res = preparedStatement.executeQuery();
 
             while(res.next()) {
-                connectedClinics.add(createNewClinicFromDB(res));
+                connectedClinics.add(getClinicFromDB(res));
             }
 
             return connectedClinics;
@@ -67,8 +70,7 @@ public class Repository {
 
     }
 
-    private Clinic createNewClinicFromDB (ResultSet res) {
-
+    private Clinic getClinicFromDB(ResultSet res) {
         try {
             String clinicID = res.getString(1);
             String clinicName = res.getString(2);
@@ -80,7 +82,23 @@ public class Repository {
 
         } catch (SQLException e) {
             e.printStackTrace();
-            System.out.println("createNewClinicFromDB repositoryError");
+            System.out.println("getClinicFromDB repositoryError");
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    private String getClinicNameFromID(String clinicID) {
+        String statement = "SELECT * FROM dbo.Clinics WHERE ID = ?";
+        try (PreparedStatement preparedStatement = dbconn.prepareStatement(statement)){
+            preparedStatement.setString(1, clinicID);
+            ResultSet res = preparedStatement.executeQuery();
+            if(res.next()) {
+                return res.getString(2);
+            }
+            return "No clinic found";
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.out.println("getClinicFromDB repositoryError");
             throw new RuntimeException(e.getMessage());
         }
     }
@@ -99,7 +117,7 @@ public class Repository {
             ResultSet res = sth.executeQuery();
 
             while (res.next()) {
-                addresses.add(createAddressFromResultSet(res));
+                addresses.add(getAddressFromDB(res));
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -110,29 +128,23 @@ public class Repository {
         return addresses;
     }
 
-    private Address createAddressFromID(String addressID) {
-        Address address = new Address("NULL", 0, "NULL", "NULL", AddressType.VISITING);
-
-        String statement = "SELECT * dbo.Addresses WHERE AddressID = ?";
-
+    private Address getAddressFromID(String addressID) {
+        String statement = "SELECT * dbo.Addresses WHERE ID = ?";
         try (PreparedStatement sth = dbconn.prepareStatement(statement)) {
             sth.setString(1, addressID);
             ResultSet res = sth.executeQuery();
-
             if (res.next()) {
-                address = createAddressFromResultSet(res);
+               return getAddressFromDB(res);
             }
-
-            return address;
-
+            return new Address(null, 0, null, null, null);
         } catch (SQLException e) {
             e.printStackTrace();
-            System.out.println("createAddressFromID repositoryError");
+            System.out.println("getAddressFromID repositoryError");
             throw new RuntimeException(e.getMessage());
         }
     }
 
-    private Address createAddressFromResultSet(ResultSet res) {
+    private Address getAddressFromDB(ResultSet res) {
          AddressType addressType;
 
          try {
@@ -152,7 +164,7 @@ public class Repository {
 
          } catch (SQLException e) {
              e.printStackTrace();
-             System.out.println("createAddressFromResultSet repositoryError");
+             System.out.println("getAddressFromDB repositoryError");
              throw new RuntimeException(e.getMessage());
          }
     }
@@ -171,7 +183,7 @@ public class Repository {
             ResultSet res = sth.executeQuery();
 
             while (res.next()) {
-                medicalStaff.add(createNewStaffFromDB(res));
+                medicalStaff.add(getStaffFromDB(res));
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -182,7 +194,7 @@ public class Repository {
         return medicalStaff;
     }
 
-    private MedicalStaff createNewStaffFromDB(ResultSet res) {
+    private MedicalStaff getStaffFromDB(ResultSet res) {
         try {
             MedicalStaffEnum title = MedicalStaffEnum.DOCTOR;
             if (res.getString(2).equals("NURSE")) {
@@ -190,19 +202,138 @@ public class Repository {
             }
             String name = res.getString(3);
             List<Address> addresses = new ArrayList<>();
-            addresses.add(createAddressFromID(res.getString(4)));
+            addresses.add(getAddressFromID(res.getString(4)));
             List<Clinic> clinics = new ArrayList<>();
 
             return new MedicalStaff(title, name, addresses);
 
         } catch (SQLException e) {
             e.printStackTrace();
-            System.out.println("createAddressFromResultSet repositoryError");
+            System.out.println("getAddressFromDB repositoryError");
             throw new RuntimeException(e.getMessage());
         }
     }
 
+    private String getMedicalStaffNameFromID(String staffID) {
+        String statement = "SELECT * FROM dbo.MedicalStaff WHERE ID = ?";
+        try (PreparedStatement preparedStatement = dbconn.prepareStatement(statement)){
+            preparedStatement.setString(1, staffID);
+            ResultSet res = preparedStatement.executeQuery();
+            if(res.next()) {
+                return res.getString(2);
+            }
+            return "No staff found";
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.out.println("getStaffNameFromID repositoryError");
+            throw new RuntimeException(e.getMessage());
+        }
+    }
 
+    /****** GET PATIENTS ******/
+
+    public List<Patient> getPatientList() {
+        List<Patient> patientList = new ArrayList<>();
+
+        String statement = "SELECT * FROM dbo.Patients";
+        try (PreparedStatement sth = dbconn.prepareStatement(statement)){
+            ResultSet res = sth.executeQuery();
+            while (res.next()) {
+                patientList.add(getPatientFromDB(res));
+            }
+        } catch (SQLException e ) {
+            e.printStackTrace();
+            System.out.println("getPatientList repositoryError");
+            throw new RuntimeException(e.getMessage());
+        }
+        return patientList;
+    }
+
+    private Patient getPatientFromDB(ResultSet res) {
+        try {
+            String name = res.getString(2);
+            List<Address> addressList = new ArrayList<>();
+            addressList.add(getAddressFromID(res.getString(3)));
+            Visit visit = getVisitFromID(res.getString(1));
+            return new Patient(name, addressList, visit);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.out.println("getPatientFromDB repositoryError");
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    /****** GET VISITS ******/
+
+    private Visit getVisitFromID(String patientID) {
+        String statement = "SELECT * dbo.Visits WHERE patientID = ?";
+        try (PreparedStatement sth = dbconn.prepareStatement(statement)) {
+            sth.setString(1, patientID);
+            ResultSet res = sth.executeQuery();
+            if (res.next()) {
+                return getVisitFromDB(res);
+            }
+            return new Visit(null, null, null, null);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.out.println("getAddressFromID repositoryError");
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    private Visit getVisitFromDB(ResultSet res) {
+        try {
+            java.sql.Date dbDate = res.getDate(3);
+            java.util.Date dateOfVisit = new java.util.Date(dbDate.getTime());
+            String clinicName = getClinicNameFromID(res.getString(5));
+            String medicalStaffName = getMedicalStaffNameFromID(res.getString(4));
+            List<Issue> reasonsForVisit = getIssueList(res.getString(6));
+
+            return new Visit(dateOfVisit, clinicName, medicalStaffName, reasonsForVisit);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.out.println("getVisitFromDB repositoryError");
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    /****** GET ISSUES ******/
+
+    private List<Issue> getIssueList(String issueID) {
+        List<Issue> issueList = new ArrayList<>();
+        String statement = "SELECT * FROM dbo.Issues WHERE  = ?";
+        try (PreparedStatement sth = dbconn.prepareStatement(statement)) {
+            sth.setString(1, issueID);
+            ResultSet res = sth.executeQuery();
+            while (res.next()) {
+                issueList.add(getIssueFromDB(res));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.out.println("getIssueList repositoryError");
+            throw new RuntimeException(e.getMessage());
+        }
+        return issueList;
+    }
+
+    private Issue getIssueFromDB(ResultSet res) {
+        try {
+            IssueEnum issueEnum = IssueEnum.EXAM;
+            if (res.getString(2).equals("LAB_VISIT")) {
+                issueEnum = IssueEnum.LAB_VISIT;
+            } else if (res.getString(2).equals("OPERATION")) {
+                issueEnum = IssueEnum.OPERATION;
+            }
+            String description = "No current description";
+            int price = res.getInt(3);
+
+            return new Issue(issueEnum, description, price);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.out.println("getIssueFromDB repositoryError");
+            throw new RuntimeException(e.getMessage());
+        }
+    }
 
 
     //    date conversion example
